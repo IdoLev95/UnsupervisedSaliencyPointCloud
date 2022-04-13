@@ -6,11 +6,20 @@ import torch
 import torch.nn.parallel
 import torch.optim as optim
 import torch.utils.data
-from Dataset.DataSet import ShapeNetDataset
+#from Dataset.DataSet import ShapeNetDataset
 #from Models import PointNetCls, feature_transform_regularizer
 import torch.nn.functional as F
 from tqdm import tqdm
+# importing sys
+import sys
+  
+# adding Folder_2 to the system path
+sys.path.append('/content/UnsupervisedSaliencyPointCloud/Dataset')
+from DataSet import ShapeNetDataset
+sys.path.append('/content/UnsupervisedSaliencyPointCloud/Models')
 
+from model import PointNetCls, feature_transform_regularizer
+  
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -23,7 +32,7 @@ parser.add_argument(
     '--nepoch', type=int, default=250, help='number of epochs to train for')
 parser.add_argument('--outf', type=str, default='cls', help='output folder')
 parser.add_argument('--model', type=str, default='', help='model path')
-parser.add_argument('--dataset', type=str, required=True, help="dataset path")
+#parser.add_argument('--dataset', type=str, required=True, help="dataset path")
 parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
 parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
 
@@ -31,6 +40,7 @@ opt = parser.parse_args()
 print(opt)
 
 if opt.dataset_type == 'shapenet':
+    opt.dataset = '/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0'
     dataset = ShapeNetDataset(
         root=opt.dataset,
         classification=True,
@@ -90,9 +100,6 @@ for epoch in range(opt.nepoch):
     for i, data in enumerate(dataloader, 0):
         points, target = data
         target = target[:, 0]
-        print('*************8')
-        print(points.shape)
-        print(idle)
         points = points.transpose(2, 1)
         points, target = points.cuda(), target.cuda()
         optimizer.zero_grad()

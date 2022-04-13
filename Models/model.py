@@ -107,3 +107,40 @@ class PointNetCls(nn.Module):
         x = F.relu(self.bn2(self.dropout(self.fc2(x))))
         x = self.fc3(x)
         return F.log_softmax(x, dim=1), trans, trans_feat
+def feature_transform_regularizer(trans):
+    d = trans.size()[1]
+    batchsize = trans.size()[0]
+    I = torch.eye(d)[None, :, :]
+    if trans.is_cuda:
+        I = I.cuda()
+    loss = torch.mean(torch.norm(torch.bmm(trans, trans.transpose(2,1)) - I, dim=(1,2)))
+    return loss
+
+if __name__ == '__main__':
+    sim_data = Variable(torch.rand(32,3,2500))
+    trans = STNkd(k=3)
+    out = trans(sim_data)
+    print('stn', out.size())
+    print('loss', feature_transform_regularizer(out))
+
+    sim_data_64d = Variable(torch.rand(32, 64, 2500))
+    trans = STNkd(k=64)
+    out = trans(sim_data_64d)
+    print('stn64d', out.size())
+    print('loss', feature_transform_regularizer(out))
+
+    pointfeat = PointNetfeat(global_feat=True)
+    out, _, _ = pointfeat(sim_data)
+    print('global feat', out.size())
+
+    pointfeat = PointNetfeat(global_feat=False)
+    out, _, _ = pointfeat(sim_data)
+    print('point feat', out.size())
+
+    cls = PointNetCls(k = 5)
+    out, _, _ = cls(sim_data)
+    print('class', out.size())
+
+    #seg = PointNetDenseCls(k = 3)
+    #out, _, _ = seg(sim_data)
+    #print('seg', out.size())
