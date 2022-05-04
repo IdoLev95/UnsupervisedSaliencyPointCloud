@@ -120,9 +120,11 @@ for epoch in range(opt.nepoch):
           if opt.feature_transform:
               loss += feature_transform_regularizer(trans_feat) * 0.001
           loss.backward()
-          print(len(classifier.feat.gradients))
-          print(classifier.feat.gradients[0])
-          print(idle)
+
+          gradientsPerPoint =torch.max(classifier.feat.gradients[0][0], 1, keepdim=False)[0]
+          #### getA is the sum of features where gradientsPerPoint are the re the gradients according to the last layer
+          getA = classifier(points, True)
+          #
           optimizer.step()
           pred_choice = pred.data.max(1)[1]
           correct = pred_choice.eq(target.data).cpu().sum()

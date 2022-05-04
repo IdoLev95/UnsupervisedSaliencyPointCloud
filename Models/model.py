@@ -81,11 +81,9 @@ class PointNetfeat(nn.Module):
         pointfeat = x
         x = F.relu(self.bn2(self.conv2(x)))
         x = self.bn3(self.conv3(x))
-        if(False):
-          print(x.shape)
-          x = torch.sum(x,2)
-          print(x.shape)
-          return x
+        if(isUsedForGradCam):
+          x = torch.sum(x,1, keepdim = False)
+          return x,x,x
         x = torch.max(x, 2, keepdim=True)[0]
         x = x.view(-1, 1024)
         if self.global_feat:
@@ -95,7 +93,7 @@ class PointNetfeat(nn.Module):
             return torch.cat([x, pointfeat], 1), trans, trans_feat
     def activateBackwrdHook(self):
       self.isUsedForGradCam = True
-      self.bn3.register_backward_hook(self.save_gradients)
+      self.bn3.register_full_backward_hook(self.save_gradients)
     
     def deactivateBackwrdHook(self):
         self.isUsedForGradCam = False
@@ -117,8 +115,10 @@ class PointNetCls(nn.Module):
         self.bn2 = nn.BatchNorm1d(256)
         #self.relu = nn.ReLU()
 
-    def forward(self, x):
-        x, trans, trans_feat = self.feat(x)
+    def forward(self, x,isUsedForGradCam = False):
+        x, trans, trans_feat = self.feat(x,isUsedForGradCam)
+        if(isUsedForGradCam):
+          return x
         x = F.relu(self.bn1(self.fc1(x)))
         x = F.relu(self.bn2(self.dropout(self.fc2(x))))
         x = self.fc3(x)
