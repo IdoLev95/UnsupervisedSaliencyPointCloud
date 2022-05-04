@@ -103,6 +103,8 @@ for epoch in range(opt.nepoch):
       
       scheduler.step()
       for batchInd,data in enumerate(tepoch,0):
+          if(batchInd> 20):
+            continue
           tepoch.set_description(f"Epoch {epoch}")
           points, target = data
           target = target[:, 0]
@@ -110,12 +112,17 @@ for epoch in range(opt.nepoch):
           points, target = points.cuda(), target.cuda()
           optimizer.zero_grad()
           classifier = classifier.train()
+          classifier.feat.activateBackwrdHook()
           pred, trans, trans_feat = classifier(points)
+          
           loss = F.nll_loss(pred, target)
           
           if opt.feature_transform:
               loss += feature_transform_regularizer(trans_feat) * 0.001
           loss.backward()
+          print(len(classifier.feat.gradients))
+          print(classifier.feat.gradients[0])
+          print(idle)
           optimizer.step()
           pred_choice = pred.data.max(1)[1]
           correct = pred_choice.eq(target.data).cpu().sum()
