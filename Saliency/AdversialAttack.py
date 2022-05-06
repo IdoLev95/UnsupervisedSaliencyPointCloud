@@ -21,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    '--Th', type=int, default=1, help='input threshold')
+    '--Th', type=float, default=1, help='input threshold')
 parser.add_argument(
     '--label', type=int, default=1, help='input label')
 parser.add_argument(
@@ -47,7 +47,19 @@ dataloader = torch.utils.data.DataLoader(
     batch_size=batchSize,
     shuffle=True,
     num_workers=int(2))
-
+def removeLargestInfluence(pointCloud,wholeFeatures,Th):
+    print(wholeFeatures.shape)
+    #meanVal = torch.mean(wholeFeatures[wholeFeatures > 0])
+    sorted, indices = torch.sort(wholeFeatures)
+    print(indices)
+    print(indices.shape)
+    print(pointCloud.shape)
+    indices = indices[0,indices < (int)(len(indices) * Th)]
+    print(indices.shape)
+    pointCloudNew =  pointCloud[: , :, indices]
+    print(pointCloudNew.shape)
+    print(idle)
+    return pointCloudNew
 
 
 print(opt)
@@ -76,7 +88,6 @@ with tqdm(dataloader, unit="batch") as tepoch:
         while pred == singleTarget:
           pred, transwhole, trans_feat = classifier(pointCloud)
           #loss = F.nll_loss(pred, singleTarget)
-          print(pred.shape)
           yc = pred[0,opt.label]
           yc.backward()
           gradientsPerPoint =torch.max(classifier.feat.gradients[0][0], 1, keepdim=False)[0]
@@ -84,8 +95,12 @@ with tqdm(dataloader, unit="batch") as tepoch:
           getA = classifier(pointCloud, True)
           wholeFeatures = gradientsPerPoint* getA
           pred = torch.argmax(pred)
-          newPointCloud = removeLargestInfluence(pointCloud,wholeFeatures)
+          newPointCloud = removeLargestInfluence(pointCloud,wholeFeatures,opt.Th)
+          print(str(pointCloud.shape[2] - newPointCloud.shape[2]) + 'points were removed'  )
+          newPointCloud = pointCloud
         print(idle)
-def removeLargestInfluence(pointCloud,wholeFeatures):
-  
+
+
+
+
         
