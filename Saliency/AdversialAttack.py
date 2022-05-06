@@ -54,6 +54,7 @@ print(opt)
 classifier.eval()
 #wantedSignal = torch.zeros([opt.num_classes, 1])
 #wantedSignal[opt.label] = 1
+
 with tqdm(dataloader, unit="batch") as tepoch:
 
   for batchInd,data in enumerate(tepoch,0):
@@ -66,17 +67,25 @@ with tqdm(dataloader, unit="batch") as tepoch:
       
       classifier.feat.activateBackwrdHook()
       for indBatch in range(batchSize):
+        
         pointCloud = points[indBatch,:,:].unsqueeze(0)
         singleTarget = target[indBatch].unsqueeze(0)
-        pred, transwhole, trans_feat = classifier(pointCloud)
-        #loss = F.nll_loss(pred, singleTarget)
-        print(pred.shape)
-        yc = pred[0,opt.label]
-        yc.backward()
-        gradientsPerPoint =torch.max(classifier.feat.gradients[0][0], 1, keepdim=False)[0]
-        #### getA is the sum of features where gradientsPerPoint are the re the gradients according to the last layer
-        getA = classifier(pointCloud, True)
-        wholeFeatures = gradientsPerPoint* getA
+        if singleTarget != opt.label:
+          continue
+        pred = singleTarget
+        while pred == singleTarget:
+          pred, transwhole, trans_feat = classifier(pointCloud)
+          #loss = F.nll_loss(pred, singleTarget)
+          print(pred.shape)
+          yc = pred[0,opt.label]
+          yc.backward()
+          gradientsPerPoint =torch.max(classifier.feat.gradients[0][0], 1, keepdim=False)[0]
+          #### getA is the sum of features where gradientsPerPoint are the re the gradients according to the last layer
+          getA = classifier(pointCloud, True)
+          wholeFeatures = gradientsPerPoint* getA
+          pred = torch.argmax(pred)
+          newPointCloud = removeLargestInfluence(pointCloud,wholeFeatures)
         print(idle)
-        
+def removeLargestInfluence(pointCloud,wholeFeatures):
+  
         
