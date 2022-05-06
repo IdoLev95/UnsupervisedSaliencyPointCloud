@@ -10,40 +10,67 @@ import sys
 import torch.nn.functional as F
 from torch.utils.data import dataloader
 from tqdm import tqdm
+sys.path.append('/content/UnsupervisedSaliencyPointCloud/Models')
+from model import PointNetCls, feature_transform_regularizer
+ 
+# adding Folder_2 to the system path
+sys.path.append('/content/UnsupervisedSaliencyPointCloud/Dataset')
+from DataSet import ShapeNetDataset
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     '--Th', type=int, default=1, help='input threshold')
 parser.add_argument(
     '--label', type=int, default=1, help='input label')
 parser.add_argument(
-    '--model', help='classifier')
-
-parser.add_argument('--dataloader', help="dataloader")
+    '--num_classes', type=int, default=16, help='classifier')
+parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
+parser.add_argument('--modelPath',type = str, default = '/content/UnsupervisedSaliencyPointCloud/cls/cls_model_0.pth', help="use feature transform")
 opt = parser.parse_args()
-print(opt)
-class AdversialPointCloud():
-    def __init__(self,Th):
-        self.Th = Th
-    def GetSaliencyGradCam(self, classifier,dataloader,label):
-        with tqdm(dataloader, unit="batch") as tepoch:
-      
-          for batchInd,data in enumerate(tepoch,0):
-              
-              points, target = data
-              batchSize = points.shape[0]
-              target = target[:, 0]
-              points = points.transpose(2, 1)
-              points, target = points.cuda(), target.cuda()
+classifier = PointNetCls(k=opt.num_classes, feature_transform=False)
+classifier.load_state_dict(torch.load(opt.modelPath))
 
-              classifier.feat.activateBackwrdHook()
-              for indBatch in range(batchSize):
-                pointCloud = points[indBatch,:].unsqueeze(0)
-                singleTarget = target.unsqueeze(0)
-                pred, trans, trans_feat = classifier(pointCloud)
-                loss = F.nll_loss(pred, singleTarget)
-                loss.backward()
-                gradientsPerPoint =torch.max(classifier.feat.gradients[0][0], 1, keepdim=False)[0]
-                #### getA is the sum of features where gradientsPerPoint are the re the gradients according to the last layer
-                getA = classifier(points, True)     
+classifier.cuda()
+classifier.feat.activateBackwrdHook()
+
+num_points = 2500
+datasetPath = '/content/drive/MyDrive/shapenetcore_partanno_segmentation_benchmark_v0'
+dataset = ShapeNetDataset(
+        root=datasetPath,
+        classification=True,
+        npoints=num_points)
+batchSize = 32
+dataloader = torch.utils.data.DataLoader(
+    dataset,
+    batch_size=batchSize,
+    shuffle=True,
+    num_workers=int(2))
+
+
+
+print(opt)
+"""
+with tqdm(dataloader, unit="batch") as tepoch:
+
+  for batchInd,data in enumerate(tepoch,0):
+      
+      points, target = data
+      batchSize = points.shape[0]
+      target = target[:, 0]
+      points = points.transpose(2, 1)
+      points, target = points.cuda(), target.cuda()
+
+      model.feat.activateBackwrdHook()
+      for indBatch in range(batchSize):
+        pointCloud = points[indBatch,:].unsqueeze(0)
+        singleTarget = target.unsqueeze(0)
+        pred, trans, trans_feat = model(pointCloud)
+        loss = F.nll_loss(pred, singleTarget)
+        loss.backward()
+        gradientsPerPoint =torch.max(model.feat.gradients[0][0], 1, keepdim=False)[0]
+        #### getA is the sum of features where gradientsPerPoint are the re the gradients according to the last layer
+        getA = model(points, True)     
+        print(idle)
+"""
