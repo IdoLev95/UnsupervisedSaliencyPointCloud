@@ -48,17 +48,13 @@ dataloader = torch.utils.data.DataLoader(
     shuffle=True,
     num_workers=int(2))
 def removeLargestInfluence(pointCloud,wholeFeatures,Th):
-    print(wholeFeatures.shape)
-    #meanVal = torch.mean(wholeFeatures[wholeFeatures > 0])
-    sorted, indices = torch.sort(wholeFeatures)
-    print(indices)
-    print(indices.shape)
-    print(pointCloud.shape)
-    indices = indices[0,indices < (int)(len(indices) * Th)]
-    print(indices.shape)
-    pointCloudNew =  pointCloud[: , :, indices]
-    print(pointCloudNew.shape)
-    print(idle)
+    sortedVal, indices = torch.sort(wholeFeatures)
+    indices = indices.squeeze(0)
+    remainInd = indices[indices < (int)(len(indices) * Th)]
+    indToColor = indices[indices >= (int)(len(indices) * Th)]
+    pointCloudNew =  pointCloud[: , :, remainInd]
+    maxT = sortedVal[-1]
+    normelizedT = wholeFeatures/maxT
     return pointCloudNew
 
 
@@ -88,16 +84,18 @@ with tqdm(dataloader, unit="batch") as tepoch:
         while pred == singleTarget:
           pred, transwhole, trans_feat = classifier(pointCloud)
           #loss = F.nll_loss(pred, singleTarget)
+          pred = F.softmax(pred)
           yc = pred[0,opt.label]
           yc.backward()
           gradientsPerPoint =torch.max(classifier.feat.gradients[0][0], 1, keepdim=False)[0]
+          classifier.feat.gradients = []
           #### getA is the sum of features where gradientsPerPoint are the re the gradients according to the last layer
           getA = classifier(pointCloud, True)
           wholeFeatures = gradientsPerPoint* getA
           pred = torch.argmax(pred)
           newPointCloud = removeLargestInfluence(pointCloud,wholeFeatures,opt.Th)
-          print(str(pointCloud.shape[2] - newPointCloud.shape[2]) + 'points were removed'  )
-          newPointCloud = pointCloud
+          print(str(pointCloud.shape[2] - newPointCloud.shape[2]) + 'points were removed and ' + str(newPointCloud.shape[2]) +  ' remained')
+          pointCloud = newPointCloud
         print(idle)
 
 
