@@ -110,7 +110,7 @@ with tqdm(dataloader, unit="batch") as tepoch:
           getA = classifier(pointCloud, True)
           wholeFeatures = gradientsPerPoint* getA
           pred = torch.argmax(pred)
-          newPointCloud,pointToColorDict = removeLargestInfluence(pointCloud,gradientsPerPoint,opt.Th,pointToColorDict)
+          newPointCloud,pointToColorDict = removeLargestInfluence(pointCloud,wholeFeatures,opt.Th,pointToColorDict)
           print(str(yc.item()) + " " + str(pointCloud.shape[2] - newPointCloud.shape[2]) + 'points were removed and ' + str(newPointCloud.shape[2]) +  ' remained')
           #print(yc)
           pointCloud = newPointCloud
