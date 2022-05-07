@@ -7,5 +7,6 @@ setup(name='pointnet',
       package_dir={'pointnet': 'Training'},
       install_requires=['torch',
                         'tqdm',
-                        'plyfile'],
+                        'plyfile',
+                        'pyvista'],
     version='0.0.1')

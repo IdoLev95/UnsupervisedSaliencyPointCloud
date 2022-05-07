@@ -17,6 +17,8 @@ from model import PointNetCls, feature_transform_regularizer
 sys.path.append('/content/UnsupervisedSaliencyPointCloud/Dataset')
 from DataSet import ShapeNetDataset
 
+import json
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 parser = argparse.ArgumentParser()
@@ -50,8 +52,8 @@ dataloader = torch.utils.data.DataLoader(
 def removeLargestInfluence(pointCloud,wholeFeatures,Th,pointToColorDict):
     sortedVal, indices = torch.sort(wholeFeatures)
     indices = indices.squeeze(0)
-    remainInd = indices[indices < (int)(len(indices) * Th)]
-    indToColor = indices[indices >= (int)(len(indices) * Th)]
+    remainInd = indices[0: (int)(len(indices) * Th)]
+    indToColor = indices[(int)(len(indices) * Th) :]
     pointCloudNew =  pointCloud[: , :, remainInd]
     maxT = sortedVal[-1]
     normelizedT = wholeFeatures/maxT
@@ -63,7 +65,7 @@ def removeLargestInfluence(pointCloud,wholeFeatures,Th,pointToColorDict):
         currPointGreen = 1 - normelizedT[0,currInd]
         if(currPointLoc in pointToColorDict.keys()):
           print('you entered twice the same ind but how?')
-        pointToColorDict[currPointLoc] = np.array([currPointRed.detach().cpu(),currPointGreen.detach().cpu(),0])
+        pointToColorDict[currPointLoc] = torch.tensor([currPointRed,currPointGreen,0])
     return pointCloudNew , pointToColorDict
 
 
@@ -90,7 +92,7 @@ with tqdm(dataloader, unit="batch") as tepoch:
         if singleTarget != opt.label:
           continue
         pred = singleTarget
-        pointToColorDict = dict()
+        pointToColorDict = {}
         while pred == singleTarget:
           pred, transwhole, trans_feat = classifier(pointCloud)
           #loss = F.nll_loss(pred, singleTarget)
@@ -104,17 +106,29 @@ with tqdm(dataloader, unit="batch") as tepoch:
           wholeFeatures = gradientsPerPoint* getA
           pred = torch.argmax(pred)
           newPointCloud,pointToColorDict = removeLargestInfluence(pointCloud,wholeFeatures,opt.Th,pointToColorDict)
-          print(str(pointCloud.shape[2] - newPointCloud.shape[2]) + 'points were removed and ' + str(newPointCloud.shape[2]) +  ' remained')
+          print(str(yc.item()) + " " + str(pointCloud.shape[2] - newPointCloud.shape[2]) + 'points were removed and ' + str(newPointCloud.shape[2]) +  ' remained')
+          #print(yc)
           pointCloud = newPointCloud
+          pred = 4
         
         remaindNumPoints = pointCloud.shape[2] 
-        for ind in range(num_points):
-          print(ind)
-          print(pointCloud.shape)
+        for ind in range(remaindNumPoints):
+          #print(ind)
+          #print(pointCloud.shape)
           currPointLoc = pointCloud[:,:,ind].squeeze(0)
           if(currPointLoc in pointToColorDict.keys()):
             print('you entered twice the same ind but how?')
-          pointToColorDict[currPointLoc] = np.array([0,0,0])
+          pointToColorDict[currPointLoc] = torch.tensor([0,0,0])
+        # create json object from dictionary
+        locAndColorArray = torch.zeros(num_points , 6)
+        loc = list(pointToColorDict.keys())
+        color = list(pointToColorDict.values())
+        for ind in range(num_points):
+          locAndColorArray[ind,0:3] = loc[ind]
+          locAndColorArray[ind,3:] = color[ind]
+#        locAndColorArray = torch.cat([loc,color], dim = 1)
+        print(locAndColorArray.shape)
+        torch.save(locAndColorArray,'tensor.pt')
         print(len(pointToColorDict.keys()))
         print(idle)
 
