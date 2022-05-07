@@ -109,10 +109,13 @@ with tqdm(dataloader, unit="batch") as tepoch:
         
         remaindNumPoints = pointCloud.shape[2] 
         for ind in range(num_points):
+          print(ind)
+          print(pointCloud.shape)
           currPointLoc = pointCloud[:,:,ind].squeeze(0)
           if(currPointLoc in pointToColorDict.keys()):
             print('you entered twice the same ind but how?')
           pointToColorDict[currPointLoc] = np.array([0,0,0])
+        print(len(pointToColorDict.keys()))
         print(idle)
 
         
