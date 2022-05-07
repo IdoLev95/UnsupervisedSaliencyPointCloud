@@ -55,7 +55,11 @@ def removeLargestInfluence(pointCloud,wholeFeatures,Th,pointToColorDict):
     remainInd = indices[0: (int)(len(indices) * Th)]
     indToColor = indices[(int)(len(indices) * Th) :]
     pointCloudNew =  pointCloud[: , :, remainInd]
+    sortedVal = sortedVal.squeeze(0)
+    #print(sortedVal.shape)
+
     maxT = sortedVal[-1]
+    #print(maxT)
     normelizedT = wholeFeatures/maxT
     numPointsToColor = len(indToColor)
     for ind in range(numPointsToColor):
@@ -66,6 +70,7 @@ def removeLargestInfluence(pointCloud,wholeFeatures,Th,pointToColorDict):
         if(currPointLoc in pointToColorDict.keys()):
           print('you entered twice the same ind but how?')
         pointToColorDict[currPointLoc] = torch.tensor([currPointRed,currPointGreen,0])
+    #print(pointToColorDict.values())
     return pointCloudNew , pointToColorDict
 
 
@@ -105,11 +110,11 @@ with tqdm(dataloader, unit="batch") as tepoch:
           getA = classifier(pointCloud, True)
           wholeFeatures = gradientsPerPoint* getA
           pred = torch.argmax(pred)
-          newPointCloud,pointToColorDict = removeLargestInfluence(pointCloud,wholeFeatures,opt.Th,pointToColorDict)
+          newPointCloud,pointToColorDict = removeLargestInfluence(pointCloud,gradientsPerPoint,opt.Th,pointToColorDict)
           print(str(yc.item()) + " " + str(pointCloud.shape[2] - newPointCloud.shape[2]) + 'points were removed and ' + str(newPointCloud.shape[2]) +  ' remained')
           #print(yc)
           pointCloud = newPointCloud
-          pred = 4
+          #pred = 4
         
         remaindNumPoints = pointCloud.shape[2] 
         for ind in range(remaindNumPoints):
@@ -127,9 +132,9 @@ with tqdm(dataloader, unit="batch") as tepoch:
           locAndColorArray[ind,0:3] = loc[ind]
           locAndColorArray[ind,3:] = color[ind]
 #        locAndColorArray = torch.cat([loc,color], dim = 1)
-        print(locAndColorArray.shape)
+        #print(locAndColorArray.shape)
         torch.save(locAndColorArray,'tensor.pt')
-        print(len(pointToColorDict.keys()))
+        #print(len(pointToColorDict.keys()))
         print(idle)
 
         
