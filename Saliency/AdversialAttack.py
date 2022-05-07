@@ -106,13 +106,13 @@ with tqdm(dataloader, unit="batch") as tepoch:
           newPointCloud,pointToColorDict = removeLargestInfluence(pointCloud,wholeFeatures,opt.Th,pointToColorDict)
           print(str(pointCloud.shape[2] - newPointCloud.shape[2]) + 'points were removed and ' + str(newPointCloud.shape[2]) +  ' remained')
           pointCloud = newPointCloud
-        print(idle)
+        
         remaindNumPoints = pointCloud.shape[2] 
         for ind in range(num_points):
           currPointLoc = pointCloud[:,:,ind].squeeze(0)
           if(currPointLoc in pointToColorDict.keys()):
             print('you entered twice the same ind but how?')
           pointToColorDict[currPointLoc] = np.array([0,0,0])
-
+        print(idle)
 
         
