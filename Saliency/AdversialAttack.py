@@ -78,7 +78,7 @@ print(opt)
 classifier.eval()
 #wantedSignal = torch.zeros([opt.num_classes, 1])
 #wantedSignal[opt.label] = 1
-
+numPossibleCtegories = torch.zeros(num_points)
 with tqdm(dataloader, unit="batch") as tepoch:
 
   for batchInd,data in enumerate(tepoch,0):
@@ -94,15 +94,16 @@ with tqdm(dataloader, unit="batch") as tepoch:
         
         pointCloud = points[indBatch,:,:].unsqueeze(0)
         singleTarget = target[indBatch].unsqueeze(0)
-        if singleTarget != opt.label:
-          continue
+        numPossibleCtegories[singleTarget] = numPossibleCtegories[singleTarget]  + 1
+        #if singleTarget != opt.label:
+          #continue
         pred = singleTarget
         pointToColorDict = {}
         while pred == singleTarget:
           pred, transwhole, trans_feat = classifier(pointCloud)
           #loss = F.nll_loss(pred, singleTarget)
           pred = F.softmax(pred)
-          yc = pred[0,opt.label]
+          yc = pred[0,singleTarget]
           yc.backward()
           gradientsPerPoint =torch.max(classifier.feat.gradients[0][0], 1, keepdim=False)[0]
           classifier.feat.gradients = []
@@ -133,7 +134,10 @@ with tqdm(dataloader, unit="batch") as tepoch:
           locAndColorArray[ind,3:] = color[ind]
 #        locAndColorArray = torch.cat([loc,color], dim = 1)
         #print(locAndColorArray.shape)
-        torch.save(locAndColorArray,'tensor.pt')
+        path =  '../../drive/MyDrive/saveRes/tensor' + str(int(singleTarget.item())) + '/'
+        if(not os.path.exists(path)):
+          os.makedirs(path)
+        torch.save(locAndColorArray,path + str(int(numPossibleCtegories[singleTarget].item())) + '.pt')
         #print(len(pointToColorDict.keys()))
         print(idle)
 
