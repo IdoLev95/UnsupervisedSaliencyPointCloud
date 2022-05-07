@@ -47,7 +47,7 @@ dataloader = torch.utils.data.DataLoader(
     batch_size=batchSize,
     shuffle=True,
     num_workers=int(2))
-def removeLargestInfluence(pointCloud,wholeFeatures,Th):
+def removeLargestInfluence(pointCloud,wholeFeatures,Th,pointToColorDict):
     sortedVal, indices = torch.sort(wholeFeatures)
     indices = indices.squeeze(0)
     remainInd = indices[indices < (int)(len(indices) * Th)]
@@ -55,7 +55,16 @@ def removeLargestInfluence(pointCloud,wholeFeatures,Th):
     pointCloudNew =  pointCloud[: , :, remainInd]
     maxT = sortedVal[-1]
     normelizedT = wholeFeatures/maxT
-    return pointCloudNew
+    numPointsToColor = len(indToColor)
+    for ind in range(numPointsToColor):
+        currInd = indToColor[ind]
+        currPointLoc = pointCloud[:,:,currInd].squeeze(0)
+        currPointRed = normelizedT[0,currInd]
+        currPointGreen = 1 - normelizedT[0,currInd]
+        if(currPointLoc in pointToColorDict.keys()):
+          print('you entered twice the same ind but how?')
+        pointToColorDict[currPointLoc] = np.array([currPointRed.detach().cpu(),currPointGreen.detach().cpu(),0])
+    return pointCloudNew , pointToColorDict
 
 
 print(opt)
@@ -81,6 +90,7 @@ with tqdm(dataloader, unit="batch") as tepoch:
         if singleTarget != opt.label:
           continue
         pred = singleTarget
+        pointToColorDict = dict()
         while pred == singleTarget:
           pred, transwhole, trans_feat = classifier(pointCloud)
           #loss = F.nll_loss(pred, singleTarget)
@@ -93,12 +103,16 @@ with tqdm(dataloader, unit="batch") as tepoch:
           getA = classifier(pointCloud, True)
           wholeFeatures = gradientsPerPoint* getA
           pred = torch.argmax(pred)
-          newPointCloud = removeLargestInfluence(pointCloud,wholeFeatures,opt.Th)
+          newPointCloud,pointToColorDict = removeLargestInfluence(pointCloud,wholeFeatures,opt.Th,pointToColorDict)
           print(str(pointCloud.shape[2] - newPointCloud.shape[2]) + 'points were removed and ' + str(newPointCloud.shape[2]) +  ' remained')
           pointCloud = newPointCloud
         print(idle)
-
-
+        remaindNumPoints = pointCloud.shape[2] 
+        for ind in range(num_points):
+          currPointLoc = pointCloud[:,:,ind].squeeze(0)
+          if(currPointLoc in pointToColorDict.keys()):
+            print('you entered twice the same ind but how?')
+          pointToColorDict[currPointLoc] = np.array([0,0,0])
 
 
         
