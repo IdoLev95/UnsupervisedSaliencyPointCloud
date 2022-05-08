@@ -95,7 +95,7 @@ classifier.cuda()
 
 
 num_batch = len(dataset) / opt.batchSize
-
+classifier = classifier.train()
 for epoch in range(opt.nepoch):
    with tqdm(dataloader, unit="batch") as tepoch:
       lossOfEpoch = []
@@ -103,16 +103,14 @@ for epoch in range(opt.nepoch):
       
       scheduler.step()
       for batchInd,data in enumerate(tepoch,0):
-          if(batchInd> 20):
-            continue
           tepoch.set_description(f"Epoch {epoch}")
           points, target = data
           target = target[:, 0]
           points = points.transpose(2, 1)
           points, target = points.cuda(), target.cuda()
           optimizer.zero_grad()
-          classifier = classifier.train()
-          classifier.feat.activateBackwrdHook()
+          
+          #classifier.feat.activateBackwrdHook()
           pred, trans, trans_feat = classifier(points)
           
           loss = F.nll_loss(pred, target)
@@ -121,18 +119,18 @@ for epoch in range(opt.nepoch):
               loss += feature_transform_regularizer(trans_feat) * 0.001
           loss.backward()
 
-          gradientsPerPoint =torch.max(classifier.feat.gradients[0][0], 1, keepdim=False)[0]
+          #gradientsPerPoint =torch.max(classifier.feat.gradients[0][0], 1, keepdim=False)[0]
           #### getA is the sum of features where gradientsPerPoint are the re the gradients according to the last layer
-          getA = classifier(points, True)
+          #getA = classifier(points, True)
           #
           optimizer.step()
           pred_choice = pred.data.max(1)[1]
           correct = pred_choice.eq(target.data).cpu().sum()
-          lossOfEpoch.append(loss.item())
-          accOfEpoch.append(correct.item() / float(opt.batchSize))
+          #lossOfEpoch.append(loss.item())
+          #accOfEpoch.append(correct.item() / float(opt.batchSize))
           #print('[%d: %d/%d] train loss: %f accuracy: %f' % (epoch, i, num_batch, loss.item(), correct.item() / float(opt.batchSize)))
-          tepoch.set_postfix(loss=sum(lossOfEpoch)/len(lossOfEpoch), accuracy=100. * sum(accOfEpoch)/len(accOfEpoch))
-          if 1 % 10 == 0:
+          #tepoch.set_postfix(loss=sum(lossOfEpoch)/len(lossOfEpoch), accuracy=100. * sum(accOfEpoch)/len(accOfEpoch))
+          if batchInd % 10 == 0:
               j, data = next(enumerate(testdataloader, 0))
               points, target = data
               target = target[:, 0]
@@ -143,7 +141,10 @@ for epoch in range(opt.nepoch):
               loss = F.nll_loss(pred, target)
               pred_choice = pred.data.max(1)[1]
               correct = pred_choice.eq(target.data).cpu().sum()
+              lossOfEpoch.append(loss.item())
+              accOfEpoch.append(correct.item() / float(opt.batchSize))
            #   print('[%d: %d/%d] %s loss: %f accuracy: %f' % (epoch, i, num_batch, blue('test'), loss.item(), correct.item()/float(opt.batchSize)))
+              tepoch.set_postfix(loss=sum(lossOfEpoch)/len(lossOfEpoch), accuracy=100. * sum(accOfEpoch)/len(accOfEpoch))
           
 
    torch.save(classifier.state_dict(), '/content/UnsupervisedSaliencyPointCloud/cls/cls_model_%d.pth' % (epoch))
