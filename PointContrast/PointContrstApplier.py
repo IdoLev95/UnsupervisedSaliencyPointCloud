@@ -10,7 +10,7 @@ import torch.utils.data
 import torch.nn.functional as F
 from torch.utils.data import dataloader
 from tqdm import tqdm
-
+import numpy as np
 import sys
   
 # adding Folder_2 to the system path
@@ -80,8 +80,16 @@ if opt.model != '':
 optimizer = optim.Adam(classifier.parameters(), lr=0.001, betas=(0.9, 0.999))
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 classifier.cuda()
-def ApplyAugOnPoints(points):
-  return -1
+def ApplyAugOnPoints(points,numberOfPoints, maxPToDrop = 0.3):
+  # Random drop points
+  pDrop = np.random.uniform(0,maxPToDrop, 1)
+  indicesToKeep = torch.randperm(numberOfPoints)
+  indicesToKeep = indicesToKeep[(int)(pDrop * numberOfPoints) : ]
+  augPoints = points[:,indicesToKeep,:]
+  # Random rotate on points
+  pDrop = np.random.uniform(0,maxPToDrop, 1)
+  # Concat tensors
+  
 def CalcLossFromEmbbeding(embedding):
   return -1
 num_batch = len(dataset) / opt.batchSize
