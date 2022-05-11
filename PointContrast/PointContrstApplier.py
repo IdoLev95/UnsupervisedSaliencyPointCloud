@@ -80,6 +80,18 @@ if opt.model != '':
 optimizer = optim.Adam(classifier.parameters(), lr=0.001, betas=(0.9, 0.999))
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 classifier.cuda()
+def GetRandomSymmetricMat(N):
+  x1 = np.zeros((1,9)).squeeze(0)
+  x1[0:6] = np.random.uniform(0,2, 6)
+  x1[7] = x1[5]
+  x1[6] = x1[2]
+  x1[8] = x1[3]
+  x1[3] = x1[1]
+  x1= torch.tensor(x1.reshape(3,3)).unsqueeze(0)
+  x1 = x1.repeat(N,1,1)
+
+  return x1
+  
 def ApplyAugOnPoints(points,numberOfPoints, maxPToDrop = 0.3):
   # Random drop points
   pDrop = np.random.uniform(0,maxPToDrop, 1)
@@ -87,8 +99,11 @@ def ApplyAugOnPoints(points,numberOfPoints, maxPToDrop = 0.3):
   indicesToKeep = indicesToKeep[(int)(pDrop * numberOfPoints) : ]
   augPoints = points[:,indicesToKeep,:]
   # Random rotate on points
-  pDrop = np.random.uniform(0,maxPToDrop, 1)
+  batchSize = points.shape[0]
+  rotationMat = GetRandomSymmetricMat(batchSize)
+  augPoints = torch.bmm(augPoints,rotationMat)
   # Concat tensors
+  return torch.cat([points , augPoints] , dim = 0)
   
 def CalcLossFromEmbbeding(embedding):
   return -1
