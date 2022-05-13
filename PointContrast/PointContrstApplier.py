@@ -87,12 +87,11 @@ def GetRandomSymmetricMat(N):
   x1[6] = x1[2]
   x1[8] = x1[3]
   x1[3] = x1[1]
-  x1= torch.tensor(x1.reshape(3,3)).unsqueeze(0)
+  x1= torch.FloatTensor(x1.reshape(3,3)).unsqueeze(0)
   x1 = x1.repeat(N,1,1)
 
   return x1
-  
-def ApplyAugOnPoints(points,numberOfPoints, maxPToDrop = 0.3):
+def GetAugPoints(points,numberOfPoints, maxPToDrop = 0.3):
   # Random drop points
   pDrop = np.random.uniform(0,maxPToDrop, 1)
   indicesToKeep = torch.randperm(numberOfPoints)
@@ -102,10 +101,23 @@ def ApplyAugOnPoints(points,numberOfPoints, maxPToDrop = 0.3):
   batchSize = points.shape[0]
   rotationMat = GetRandomSymmetricMat(batchSize)
   augPoints = torch.bmm(augPoints,rotationMat)
+  return augPoints
+def ApplyAugOnPoints(points,numberOfPoints, maxPToDrop = 0.3):
+  aug1 = GetAugPoints(points,numberOfPoints, maxPToDrop)
+  aug2 = GetAugPoints(points,numberOfPoints, maxPToDrop)
   # Concat tensors
-  return torch.cat([points , augPoints] , dim = 0)
+  return torch.cat([aug1 , aug2] , dim = 0)
   
 def CalcLossFromEmbbeding(embedding):
+  # 2N points
+  N = embedding.shape[0] / 2
+  embedding1 = embedding[0:N,:]
+  embedding2 = embedding[N:,:]
+  # mul 2 mat element wise and take exp
+
+  #mul 2 mat to get NXN mat.take exp and sum (no mater col / row)
+
+  # divide the two mats
   return -1
 num_batch = len(dataset) / opt.batchSize
 classifier = classifier.train()
