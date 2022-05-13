@@ -135,8 +135,9 @@ for epoch in range(opt.nepoch):
           optimizer.zero_grad()
           # Apply Random Augmentaion on points
           AugPoints = ApplyAugOnPoints(points)
-          _,_,_,embedding = classifier(AugPoints)
+          _,_,_,embedding = classifier(AugPoints,opt.num_points)
           
           loss = CalcLossFromEmbbeding(embedding)
           loss.backward()
           optimizer.step()
+          print(loss)
