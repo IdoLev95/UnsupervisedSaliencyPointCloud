@@ -114,11 +114,12 @@ def CalcLossFromEmbbeding(embedding):
   embedding1 = embedding[0:N,:]
   embedding2 = embedding[N:,:]
   # mul 2 mat element wise and take exp
-
+  numeratorLog = torch.log(torch.exp(torch.mul(embedding1,embedding2)))
   #mul 2 mat to get NXN mat.take exp and sum (no mater col / row)
-
+  denominatorLog = torch.logsumexp(torch.matmul(embedding1.transpose(), embedding2))
   # divide the two mats
-  return -1
+  loss = -(numeratorLog - denominatorLog)
+  return loss
 num_batch = len(dataset) / opt.batchSize
 classifier = classifier.train()
 for epoch in range(opt.nepoch):
@@ -137,7 +138,5 @@ for epoch in range(opt.nepoch):
           _,_,_,embedding = classifier(AugPoints)
           
           loss = CalcLossFromEmbbeding(embedding)
-          
-
           loss.backward()
           optimizer.step()
