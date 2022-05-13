@@ -100,7 +100,7 @@ with tqdm(dataloader, unit="batch") as tepoch:
         pred = singleTarget
         pointToColorDict = {}
         while pred == singleTarget:
-          pred, transwhole, trans_feat = classifier(pointCloud)
+          pred, transwhole, trans_feat,_ = classifier(pointCloud)
           #loss = F.nll_loss(pred, singleTarget)
           pred = F.softmax(pred)
           yc = pred[0,singleTarget]

@@ -87,7 +87,7 @@ def GetRandomSymmetricMat(N):
   x1[6] = x1[2]
   x1[8] = x1[3]
   x1[3] = x1[1]
-  x1= torch.FloatTensor(x1.reshape(3,3)).unsqueeze(0)
+  x1= torch.FloatTensor(x1.reshape(3,3)).unsqueeze(0).cuda()
   x1 = x1.repeat(N,1,1)
 
   return x1
@@ -96,11 +96,14 @@ def GetAugPoints(points,numberOfPoints, maxPToDrop = 0.3):
   pDrop = np.random.uniform(0,maxPToDrop, 1)
   indicesToKeep = torch.randperm(numberOfPoints)
   indicesToKeep = indicesToKeep[(int)(pDrop * numberOfPoints) : ]
-  augPoints = points[:,indicesToKeep,:]
+  augPoints = points[:,:,indicesToKeep]
   # Random rotate on points
   batchSize = points.shape[0]
   rotationMat = GetRandomSymmetricMat(batchSize)
-  augPoints = torch.bmm(augPoints,rotationMat)
+  #print(points.shape)
+  #print(rotationMat.shape)
+  #print(augPoints.shape)
+  augPoints = torch.bmm(rotationMat,augPoints)
   return augPoints
 def ApplyAugOnPoints(points,numberOfPoints, maxPToDrop = 0.3):
   aug1 = GetAugPoints(points,numberOfPoints, maxPToDrop)
@@ -134,10 +137,10 @@ for epoch in range(opt.nepoch):
           points, target = points.cuda(), target.cuda()
           optimizer.zero_grad()
           # Apply Random Augmentaion on points
-          AugPoints = ApplyAugOnPoints(points)
-          _,_,_,embedding = classifier(AugPoints,opt.num_points)
+          AugPoints = ApplyAugOnPoints(points,opt.num_points)
+          _,_,_,embedding = classifier(AugPoints)
           
-          loss = CalcLossFromEmbbeding(embedding)
+          loss = torch.mean(CalcLossFromEmbbeding(embedding))
           loss.backward()
           optimizer.step()
-          print(loss)
+          tepoch.set_postfix(loss=loss)

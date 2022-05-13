@@ -137,7 +137,7 @@ for epoch in range(opt.nepoch):
               points = points.transpose(2, 1)
               points, target = points.cuda(), target.cuda()
               classifier = classifier.eval()
-              pred, _, _ = classifier(points)
+              pred, _, _ ,_= classifier(points)
               loss = F.nll_loss(pred, target)
               pred_choice = pred.data.max(1)[1]
               correct = pred_choice.eq(target.data).cpu().sum()
