@@ -6,19 +6,14 @@ import torch
 import torch.nn.parallel
 import torch.optim as optim
 import torch.utils.data
-#from Dataset.DataSet import ShapeNetDataset
-#from Models import PointNetCls, feature_transform_regularizer
 import torch.nn.functional as F
 from torch.utils.data import dataloader
 from tqdm import tqdm
-# importing sys
 import sys
-  
 # adding Folder_2 to the system path
 sys.path.append('/content/UnsupervisedSaliencyPointCloud/Dataset')
 from DataSet import ShapeNetDataset
 sys.path.append('/content/UnsupervisedSaliencyPointCloud/Models')
-
 from model import PointNetCls, feature_transform_regularizer
   
 
@@ -33,7 +28,6 @@ parser.add_argument(
     '--nepoch', type=int, default=1, help='number of epochs to train for')
 parser.add_argument('--outf', type=str, default='cls', help='output folder')
 parser.add_argument('--model', type=str, default='', help='model path')
-#parser.add_argument('--dataset', type=str, required=True, help="dataset path")
 parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
 parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
 
@@ -53,17 +47,6 @@ if opt.dataset_type == 'shapenet':
         split='test',
         npoints=opt.num_points,
         data_augmentation=False)
-#elif opt.dataset_type == 'modelnet40':
-##    dataset = ModelNetDataset(
- #       root=opt.dataset,
- #       npoints=opt.num_points,
-        #split='trainval')
-
-  #  test_dataset = ModelNetDataset(
-  #      root=opt.dataset,
-  #      split='test',
-  #      npoints=opt.num_points,
-  #      data_augmentation=False)
 else:
     exit('wrong dataset type')
 
@@ -119,17 +102,9 @@ for epoch in range(opt.nepoch):
               loss += feature_transform_regularizer(trans_feat) * 0.001
           loss.backward()
 
-          #gradientsPerPoint =torch.max(classifier.feat.gradients[0][0], 1, keepdim=False)[0]
-          #### getA is the sum of features where gradientsPerPoint are the re the gradients according to the last layer
-          #getA = classifier(points, True)
-          #
           optimizer.step()
           pred_choice = pred.data.max(1)[1]
           correct = pred_choice.eq(target.data).cpu().sum()
-          #lossOfEpoch.append(loss.item())
-          #accOfEpoch.append(correct.item() / float(opt.batchSize))
-          #print('[%d: %d/%d] train loss: %f accuracy: %f' % (epoch, i, num_batch, loss.item(), correct.item() / float(opt.batchSize)))
-          #tepoch.set_postfix(loss=sum(lossOfEpoch)/len(lossOfEpoch), accuracy=100. * sum(accOfEpoch)/len(accOfEpoch))
           if batchInd % 10 == 0:
               j, data = next(enumerate(testdataloader, 0))
               points, target = data
@@ -143,7 +118,6 @@ for epoch in range(opt.nepoch):
               correct = pred_choice.eq(target.data).cpu().sum()
               lossOfEpoch.append(loss.item())
               accOfEpoch.append(correct.item() / float(opt.batchSize))
-           #   print('[%d: %d/%d] %s loss: %f accuracy: %f' % (epoch, i, num_batch, blue('test'), loss.item(), correct.item()/float(opt.batchSize)))
               tepoch.set_postfix(loss=sum(lossOfEpoch)/len(lossOfEpoch), accuracy=100. * sum(accOfEpoch)/len(accOfEpoch))
           
 
