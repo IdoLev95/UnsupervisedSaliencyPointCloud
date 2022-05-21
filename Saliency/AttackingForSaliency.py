@@ -40,7 +40,7 @@ class SaliencyDetectionUsingLabels():
     self.classifier.eval()
     with tqdm(self.train_data_loader, unit="batch") as tepoch:
       for batchInd,data in enumerate(tepoch,0):
-        points, targe = data
+        points, target = data
         batchSize = points.shape[0]
         target = target[:, 0]
         points = points.transpose(2, 1)

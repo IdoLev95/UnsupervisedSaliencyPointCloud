@@ -46,17 +46,17 @@ class ModelPointNetTrainer():
               target = target[:, 0]
               points = points.transpose(2, 1)
               points, target = points.cuda(), target.cuda()
-              classifier = classifier.eval()
-              pred, _, _ ,_= classifier(points)
+              self.classifier = self.classifier.eval()
+              pred, _, _ ,_= self.classifier(points)
               loss = F.nll_loss(pred, target)
               pred_choice = pred.data.max(1)[1]
               correct = pred_choice.eq(target.data).cpu().sum()
               lossOfEpoch.append(loss.item())
-              accOfEpoch.append(correct.item() / float(self.batchSize))
+              accOfEpoch.append(correct.item() / float(self.batch_size))
               tepoch.set_postfix(loss=sum(lossOfEpoch)/len(lossOfEpoch), accuracy=100. * sum(accOfEpoch)/len(accOfEpoch))
           
 
-      torch.save(classifier.state_dict(), '/content/UnsupervisedSaliencyPointCloud/cls/cls_model_%d.pth' % (epoch))
+      torch.save(self.classifier.state_dict(), '/content/UnsupervisedSaliencyPointCloud/cls/cls_model_%d.pth' % (epoch))
 
         
 
