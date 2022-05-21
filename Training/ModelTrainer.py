@@ -10,7 +10,7 @@ sys.path.append('/content/UnsupervisedSaliencyPointCloud/Models')
 from model import PointNetCls, feature_transform_regularizer
 
 
-class ModelTrainer():
+class ModelPointNetTrainer():
   def __init__(self, train_data_loader, test_data_loader,classifier,optimizer,scheduler,batch_size):
         self.train_data_loader = train_data_loader
         self.test_data_loader = test_data_loader
@@ -21,7 +21,7 @@ class ModelTrainer():
 
   def train(self,num_epochs,feature_transform = False):
     for epoch in range(num_epochs):
-      with tqdm(self.dataloader, unit="batch") as tepoch:
+      with tqdm(self.train_data_loader, unit="batch") as tepoch:
         lossOfEpoch = []
         accOfEpoch = []
         self.scheduler.step()
