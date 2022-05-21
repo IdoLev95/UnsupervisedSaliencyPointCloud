@@ -41,7 +41,7 @@ class ModelPointNetTrainer():
           pred_choice = pred.data.max(1)[1]
           correct = pred_choice.eq(target.data).cpu().sum()
           if batchInd % 10 == 0:
-              j, data = next(enumerate(self.testdataloader, 0))
+              j, data = next(enumerate(self.test_data_loader, 0))
               points, target = data
               target = target[:, 0]
               points = points.transpose(2, 1)

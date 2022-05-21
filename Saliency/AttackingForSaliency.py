@@ -5,16 +5,17 @@ from tqdm import tqdm
 import torch
 
 class SaliencyDetectionUsingLabels():
-  def __init__(self, classifier, train_data_loader, test_data_loader,num_points):
+  def __init__(self, classifier, train_data_loader, test_data_loader,num_points,Th = 0.99):
         self.classifier = classifier
         self.test_data_loader = test_data_loader
         self.train_data_loader = train_data_loader
         self.num_points = num_points
-  def removeLargestInfluence(pointCloud,wholeFeatures,Th,pointToColorDict):
+        self.Th =Th
+  def removeLargestInfluence(self,pointCloud,wholeFeatures,pointToColorDict):
     sortedVal, indices = torch.sort(wholeFeatures)
     indices = indices.squeeze(0)
-    remainInd = indices[0: (int)(len(indices) * Th)]
-    indToColor = indices[(int)(len(indices) * Th) :]
+    remainInd = indices[0: (int)(len(indices) * self.Th)]
+    indToColor = indices[(int)(len(indices) * self.Th) :]
     pointCloudNew =  pointCloud[: , :, remainInd]
     sortedVal = sortedVal.squeeze(0)
     #print(sortedVal.shape)
@@ -66,7 +67,7 @@ class SaliencyDetectionUsingLabels():
             getA = self.classifier(pointCloud, True)
             wholeFeatures = gradientsPerPoint* getA
             pred = torch.argmax(pred)
-            newPointCloud,pointToColorDict = removeLargestInfluence(pointCloud,wholeFeatures,opt.Th,pointToColorDict)
+            newPointCloud,pointToColorDict = self.removeLargestInfluence(pointCloud,wholeFeatures,pointToColorDict)
             print(str(yc.item()) + " " + str(pointCloud.shape[2] - newPointCloud.shape[2]) + 'points were removed and ' + str(newPointCloud.shape[2]) +  ' remained')
             pointCloud = newPointCloud
           
