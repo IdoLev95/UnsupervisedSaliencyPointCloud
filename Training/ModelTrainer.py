@@ -32,7 +32,7 @@ class ModelPointNetTrainer():
           points = points.transpose(2, 1)
           points, target = points.cuda(), target.cuda()
           self.optimizer.zero_grad()
-          pred, trans, trans_feat = self.classifier(points)  
+          pred, trans, trans_feat,_ = self.classifier(points)  
           loss = F.nll_loss(pred, target)
           if feature_transform:
               loss += feature_transform_regularizer(trans_feat) * 0.001
